@@ -1,0 +1,336 @@
+---
+title: "R-Ladies Aurora - Introduction to R Functions"
+author: "Zhixin Lun, PhD"
+date: "10-01-2024"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Why Function is Recommended?
+
+- Avoid repeating copy-and-paste operation in code
+- Reuse code and increase the coding efficiency
+- Make your code structure neat by keeping the same and multiple actions on different inputs
+
+### When Should You Write a Function?
+
+Whenever you've copied and pasted a block of code more than twice!!!
+
+### Understand function structure:
+
+- Function name
+- Argument/Input
+- Output
+
+When you started with `library(ggplot2)`, you were actually using R function:
+
+- Function name = `library`
+- Argument/Input = `ggplot2`
+- Output: the package `ggplot2` gets loaded into your R environment
+
+The form of the function output can be various and depending on your need:
+
+- values (common)
+- messages/texts (common)
+- figures
+- combined list of values and texts
+- invisible actions such as loading package
+
+### 'Easy' function
+The idea of function in programming was motivated by avoiding repeated calculation Let's start with a simple calculation task for converting temperature to a different unit. The formula for converting the temperature in Fahrenheit ($F$) to Celsius ($C$) is:
+$$\text{C} = (\text{F} - 32) \times \frac{5}{9}$$
+The following example code is not a good way to implement the calculation. If we have longer length for `F_vec` (like 1000 elements), should we copy and paste many times? The answer is NO!
+```{r tedious_eg, echo=TRUE, warning=FALSE}
+F_vec = c(100, 105, 110, 115)
+C_vec = rep(4, 0)
+
+# Duplicated operations
+C_vec[1] = (F_vec[1] - 32)*5/9
+C_vec[2] = (F_vec[2] - 32)*5/9
+C_vec[3] = (F_vec[3] - 32)*5/9
+C_vec[4] = (F_vec[4] - 32)*5/9
+
+print(C_vec)
+```
+
+Let's start with a function:
+```{r Eg1_define_function, echo=TRUE, warning=FALSE}
+f_to_c <- function(f_value) {
+  c_value = (f_value - 32)*5/9
+  return(c_value)
+}
+```
+
+- Function name = `f_to_c`
+- Argument/Input = `f_value`
+- Output = the value of `c_value`
+
+Question: do you observe any change in your R Environment after running the above code?
+
+Testing is the first step after writing a function. Pick some values to test the output.
+```{r Eg1_test, echo=TRUE, error=TRUE}
+# Test your function
+f_to_c(105)
+f_to_c(85)
+f_to_c(65)
+f_to_c(45)
+f_to_c("Hello") # R could handle some basic mistakes for input
+```
+
+If the function is ready, we can apply it on any input.
+```{r Eg1_implement, echo=TRUE, error=TRUE}
+# Test your function
+C_vec = sapply(F_vec, FUN=f_to_c)
+print(C_vec)
+
+# Create 1000 elements 
+F_vec = seq(1, 1000)
+C_vec = sapply(F_vec, FUN=f_to_c)
+```
+
+### Understand local and global variables
+```{r Eg1_apply, echo=TRUE}
+current_temp_F = 100
+current_temp_C = 38
+```
+
+**Question**: do you observe any change in your R Environment after running the above code?
+
+- **Global variable**: The assignment is done in the main environment or outside the chunk of function. Both `current_temp_F` and `current_temp_C` are global variables.
+
+- **Local variable**: The assignment is done inside the chunk of function and it is not displayed in the R Global Environment. Both `f_value` and `c_value` are local variables as they were assigned with values inside the function.
+
+#### <span style="color: red;">Mistake 1: Attempting to change the global variable inside a function</span> 
+
+```{r Eg1_mistake, echo=TRUE}
+f_to_c_mtk <- function(f_value) {
+  current_temp_C = (f_value - 32)*5/9
+}
+
+f_to_c_mtk(85)
+print(current_temp_C)
+
+f_to_c_mtk(65)
+print(current_temp_C)
+
+f_to_c_mtk(45)
+print(current_temp_C)
+```
+
+The variable `current_temp_C` does not change with the input of `f_value` as `current_temp_C` is a global variable. The operation inside the function does not impact global variables. What should you do if you want to change global variables?
+
+**Answer**: return a value from the function and assign it to global variables.
+
+Here is the correct way for global variable assignment:
+```{r Eg1_correct, echo=TRUE}
+f_to_c_corr <- function(f_value) {
+  c_value = (f_value - 32)*5/9
+  return(c_value)
+}
+
+current_temp_C = f_to_c_corr(85)
+print(current_temp_C)
+
+current_temp_C = f_to_c_corr(65)
+print(current_temp_C)
+
+current_temp_C = f_to_c_corr(45)
+print(current_temp_C)
+```
+
+**Tips**: Local variables and global variables shouldn't share the same names. It is not good for debugging and it also makes your code less readable.
+
+
+### 'Moderate' Function
+Let's make a function with little bit complicated logic inside. Sometimes, you would like to add some limitations on your input. We call it as conditional execution. We continue the previous example for temperature conversion but we limit the input range for human only (91.8-100.8 F).
+
+```{r Eg2_define, echo=TRUE, warning=FALSE}
+f_to_c_human <- function(f_value) {
+  
+  if (f_value >= 91.8 & f_value <= 100.8) {
+    c_value = (f_value - 32)*5/9
+    return(c_value)
+  }
+  else {
+    message("Too low or too high!!")
+  }
+}
+```
+
+```{r Eg2_test, echo=TRUE, warning=TRUE, error=TRUE}
+my_current_temp_C = f_to_c_human(99.8)
+my_current_temp_C
+
+my_current_temp_C = f_to_c_human(1000)
+my_current_temp_C
+```
+
+We can add one more `if` to have a further condition execution.
+
+```{r Eg3_define, echo=TRUE, error=TRUE}
+f_to_c_human_msg <- function(f_value) {
+  
+  if (f_value >= 91.8 & f_value <= 100.8) {
+    c_value = (f_value - 32)*5/9
+    return(c_value)
+  }
+  else if (f_value < 91.8) {
+    message("Too low!!")
+  }
+  else {
+    message("Too high!!")
+  }
+  
+}
+```
+
+```{r Eg3_test, echo=TRUE, warning=TRUE, error=TRUE}
+my_current_temp_C = f_to_c_human_msg(99.8)
+my_current_temp_C
+
+my_current_temp_C = f_to_c_human_msg(1000)
+my_current_temp_C = f_to_c_human_msg(0)
+```
+
+**Question**: do you notice the value returned for `my_current_temp_C` is `NULL`. Can you explain why?
+
+### Error Control.
+Before talking about error control, let's have a look at another mistake which is easy to make by beginners. 
+
+#### <span style="color: red;">Mistake 2: Variables get changed due to errors</span>.
+
+```{r valueChange_test, echo=TRUE, warning=TRUE, error=TRUE}
+my_current_temp_C = 37 # initial value
+print(my_current_temp_C)
+
+my_current_temp_C = f_to_c_human(1000)
+print(my_current_temp_C)
+```
+
+**Question**: do you observe that the value of `my_current_temp_C` got changed from `37` to `NULL`?
+
+If you don't want to reset the variable due to error, you need to control the error. You can consider modifying your function as:
+```{r stopFunction_define, echo=TRUE, error=TRUE}
+f_to_c_human_stop <- function(f_value) {
+  
+  if (f_value >= 91.8 & f_value <= 100.8) {
+    c_value = (f_value - 32)*5/9
+    return(c_value)
+  }
+  else if (f_value < 91.8) {
+    stop("Too low!!") # stop the function 
+  }
+  else {
+    stop("Too high!!") # stop the function 
+  }
+}
+```
+
+```{r stopFunction_test, echo=TRUE, warning=TRUE, error=TRUE}
+my_current_temp_C = 37 # initial value
+
+my_current_temp_C = f_to_c_human_stop(99.8)
+print(my_current_temp_C)
+
+my_current_temp_C = f_to_c_human_stop(1000)
+print(my_current_temp_C)
+```
+
+- `stop`: it stops the function but no return for the output. 
+
+- `message`: it keeps the function running and returns `NULL` for the output.
+
+Let's apply these two different error control mechanisms on a vector. We'll see the difference.
+```{r errorContrl_implement, echo=TRUE, warning=TRUE, error=TRUE}
+F_vec = c(100, 105, 110, 115)
+C_vec = rep(4, 0) # initial values with 0s
+
+C_vec = sapply(F_vec, FUN = f_to_c_human_msg)
+print(C_vec)
+```
+
+```{r errorContrl_implement2, echo=TRUE, warning=TRUE, error=TRUE}
+C_vec = rep(4, 0) # initial values with 0s
+C_vec = sapply(F_vec, FUN = f_to_c_human_stop)
+print(C_vec)
+```
+
+
+
+### You Don't Need to Reinvent the Wheel!
+
+Before starting to write a new function, try to explore if there are some existing functions or packages in R. If not, then create your own functions.
+
+For an example, we would like to plot histogram for each numeric columns for the dataset `iris`. 
+
+```{r data_overview, echo=TRUE, message=FALSE, warning=FALSE}
+library(knitr)
+library(vtable)
+
+head(iris, n = 50) %>% 
+  kable %>%
+  kable_styling("striped", full_width = F) %>% 
+  scroll_box(height = "200px")
+```
+
+First, let's create a histogram for the variable `Sepal.Length` by different `Species`. 
+
+```{r ggplot_ex, echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+library(ggplot2)
+library(dplyr)
+
+iris %>% 
+  ggplot(aes(x=Sepal.Length, fill=Species)) + 
+  geom_histogram(color="#e9ecef", alpha=0.6, position = 'identity') + 
+  scale_fill_manual(values=c("#69b3a2", "#404080", "goldenrod")) +
+  labs(fill="")
+```
+
+Instead of copying and pasting the above block of lines **3 times** for the other columns (`Sepal.Width`, `Petal.Length`, and `Petal.Width`), we can define a function with `input = numeric variables` and `output = figure`.
+
+```{r ggplot_hist_func, echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+iris_hist <- function(iris_data, iris_var) {
+  iris_data %>% 
+  ggplot(aes(x={{iris_var}}, fill=Species)) + 
+  geom_histogram(color="#e9ecef", alpha=0.6, position = 'identity') + 
+  scale_fill_manual(values=c("#69b3a2", "#404080", "goldenrod")) +
+  labs(fill="")
+}
+```
+
+**Importance**: `{{` (read: curly curly) tells R to treat the variable as a data frame variable.
+
+Call the function with different inputs:
+```{r ggplot_hist_func_call, echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+iris_hist(iris, Sepal.Length)
+iris_hist(iris, Sepal.Width)
+iris_hist(iris, Petal.Length)
+iris_hist(iris, Petal.Width)
+```
+
+
+
+
+### Good Practices
+
+**Writing a function:**
+
+- Function names: verbs, never start with numbers. Consider using underscores to separate words, e.g., `impute_missing()`, `calc_avg()`.
+- Argument names: nouns
+- Output: explicitly return values or messages using `return()` and `message()`.
+
+
+**Calling a function:**
+
+- Make your code more readable by explicitly assigning values for arguments
+
+```{r good_practice, echo=TRUE}
+# Good
+mean(x = 1:10, na.rm = TRUE)
+
+# Not so good:
+mean(1:10, ,TRUE)
+```
